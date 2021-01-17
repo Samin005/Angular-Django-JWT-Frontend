@@ -4,6 +4,7 @@ import {NgModule} from '@angular/core';
 import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
 import {SocialLoginModule, SocialAuthServiceConfig, GoogleLoginProvider} from 'angularx-social-login';
+import {HttpClientModule} from '@angular/common/http';
 
 @NgModule({
   declarations: [
@@ -12,6 +13,7 @@ import {SocialLoginModule, SocialAuthServiceConfig, GoogleLoginProvider} from 'a
   imports: [
     BrowserModule,
     AppRoutingModule,
+    HttpClientModule,
     SocialLoginModule
   ],
   providers: [{

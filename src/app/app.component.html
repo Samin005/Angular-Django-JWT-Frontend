@@ -1,7 +1,7 @@
 <div class="container" style="margin-top: 12rem;">
   <div class="row">
     <div class="mx-auto">
-      <div *ngIf="!loggedIn; else logged">
+      <div *ngIf="!loggedIn; else logged" class="text-center">
         <button
           class="btn btn-light"
           style="border-color: gray"
@@ -16,6 +16,10 @@
           Sign-out <i class="fas fa-sign-out-alt"></i>
         </button>
       </ng-template>
+      <div class="my-5 text-center">
+        <button class="btn btn-success" (click)="requestSecretData()">Request Secret Data</button>
+        <div>{{secretData.name}}: {{secretData.value}}</div>
+      </div>
     </div>
   </div>
 </div>
