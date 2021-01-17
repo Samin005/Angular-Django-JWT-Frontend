@@ -1,9 +1,21 @@
-<div class="container mt-lg-5">
+<div class="container" style="margin-top: 12rem;">
   <div class="row">
     <div class="mx-auto">
-      <button class="btn btn-light" style="border-color: gray">
-        Sign-in <i class="fab fa-google"></i>
-      </button>
+      <div *ngIf="!loggedIn; else logged">
+        <button
+          class="btn btn-light"
+          style="border-color: gray"
+          (click)="signInWithGoogle()">
+          Sign-in <i class="fab fa-google"></i>
+        </button>
+      </div>
+      <ng-template #logged>
+        Welcome, {{user.name}}!
+        <br>
+        <button class="btn btn-outline-danger" (click)="signOut()">
+          Sign-out <i class="fas fa-sign-out-alt"></i>
+        </button>
+      </ng-template>
     </div>
   </div>
 </div>
