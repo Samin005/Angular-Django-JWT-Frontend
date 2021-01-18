@@ -1,6 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {GoogleLoginProvider, SocialAuthService, SocialUser} from 'angularx-social-login';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-root',
@@ -58,8 +59,19 @@ export class AppComponent implements OnInit {
       (response: any) => {
         console.log(response);
         this.secretData = response;
+        Swal.fire({
+          icon: 'success',
+          title: this.secretData.name + ':',
+          text: this.secretData.value
+        }).finally();
       },
-      (error) => console.log(error)
+      (error) => {
+        console.log(error);
+        Swal.fire({
+          icon: 'error',
+          title: error.message
+        }).finally();
+      }
     );
   }
 }
