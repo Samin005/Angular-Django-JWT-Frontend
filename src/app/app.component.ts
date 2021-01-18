@@ -12,37 +12,36 @@ import {interval, Subscription} from 'rxjs';
 })
 export class AppComponent implements OnInit {
 
-  user: any;
   secretData = {name: '', value: ''};
   refreshTokenSubscription: Subscription;
-  refreshTokenInterval: number;
 
   constructor(private http: HttpClient,
-              private socialAuthService: SocialAuthService,
+              public socialAuthService: SocialAuthService,
               private authService: AuthService) {
-    this.user = null;
     this.refreshTokenSubscription = new Subscription();
-    this.refreshTokenInterval = 300000;
   }
 
   ngOnInit(): void {
     this.socialAuthService.authState.subscribe((user) => {
-      this.user = user;
+      // getting user from angularx-social-login
+      this.authService.user = user;
       console.log(user);
       if (user != null) {
-        this.http.post('http://127.0.0.1:8000/auth/google/', {
-          access_token: this.user.authToken
-        }).subscribe((response: any) => {
-          this.authService.accessToken = response.access_token;
-          this.authService.refreshToken = response.refresh_token;
-          this.tokenRefresh();
-          this.refreshTokenSubscription = interval(this.refreshTokenInterval).subscribe(() => this.tokenRefresh());
+        this.authService.callUserSignIn().subscribe((response: any) => {
+          // getting tokens from django backend
+          this.authService.setTokens(response.access_token, response.refresh_token);
+          // refreshing tokens after sign-in
+          this.refreshingTokens();
+          // making sure the tokens get refreshed before the expiration interval
+          this.refreshTokenSubscription = interval(this.authService.refreshTokenInterval).subscribe(() => {
+            this.refreshingTokens();
+          });
           console.log(response);
           if (Swal.isVisible()) {
             Swal.fire({
               icon: 'success',
               title: 'Sign-in Success!',
-              text: 'Welcome, ' + this.user.name,
+              text: 'Welcome, ' + this.authService.user.name,
               showConfirmButton: false,
               timer: 1000
             }).finally();
@@ -50,6 +49,13 @@ export class AppComponent implements OnInit {
         }, (error) => console.log(error));
       }
     });
+  }
+
+  refreshingTokens(): void {
+    this.authService.callTokenRefresh().subscribe(
+      (newToken: any) => {
+        this.authService.refreshTokens(newToken);
+      });
   }
 
   signInWithGoogle(): void {
@@ -68,7 +74,7 @@ export class AppComponent implements OnInit {
   signOut(): void {
     Swal.fire({title: 'Signing-out...'}).finally();
     Swal.showLoading();
-    this.http.post('http://127.0.0.1:8000/auth/logout/', {}).subscribe(
+    this.authService.callUserSignOut().subscribe(
       (response) => {
         console.log(response);
         this.authService.resetTokens();
@@ -116,20 +122,6 @@ export class AppComponent implements OnInit {
           icon: 'error',
           title: error.message
         }).finally();
-      }
-    );
-  }
-
-  tokenRefresh(): void{
-    this.http.post('http://127.0.0.1:8000/auth/token/refresh/', {refresh: this.authService.refreshToken}).subscribe(
-      (response: any) => {
-        console.log(response);
-        this.authService.accessToken = response.access;
-        const accessTokenExpirationTime = new Date(response.access_token_expiration);
-        const now = new Date();
-        this.refreshTokenInterval = accessTokenExpirationTime.getTime() - now.getTime();
-        this.refreshTokenInterval = this.refreshTokenInterval - this.refreshTokenInterval * .1;
-        console.log('refresh interval: ' + this.refreshTokenInterval / 60000 + ' mins');
       });
   }
 }
