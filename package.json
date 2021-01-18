@@ -23,7 +23,6 @@
     "angularx-social-login": "^3.5.4",
     "bootstrap": "^4.5.3",
     "jquery": "^3.5.1",
-    "ngx-cookie-service": "^11.0.2",
     "popper.js": "^1.16.1",
     "rxjs": "~6.6.0",
     "sweetalert2": "^10.13.0",

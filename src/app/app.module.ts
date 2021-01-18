@@ -5,7 +5,6 @@ import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
 import {SocialLoginModule, SocialAuthServiceConfig, GoogleLoginProvider} from 'angularx-social-login';
 import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
-import {CookieService} from 'ngx-cookie-service';
 import {AuthInterceptor} from './auth.interceptor';
 
 @NgModule({
@@ -31,8 +30,7 @@ import {AuthInterceptor} from './auth.interceptor';
           )
         }
       ]
-    } as SocialAuthServiceConfig},
-    CookieService
+    } as SocialAuthServiceConfig}
   ],
   bootstrap: [AppComponent]
 })

@@ -2,7 +2,7 @@ import {Component, OnInit} from '@angular/core';
 import {GoogleLoginProvider, SocialAuthService} from 'angularx-social-login';
 import {HttpClient} from '@angular/common/http';
 import Swal from 'sweetalert2';
-import {CookieService} from 'ngx-cookie-service';
+import {AuthService} from './auth.service';
 
 @Component({
   selector: 'app-root',
@@ -16,18 +16,19 @@ export class AppComponent implements OnInit {
 
   constructor(private http: HttpClient,
               private socialAuthService: SocialAuthService,
-              private cookieService: CookieService) {
+              private authService: AuthService) {
     this.user = null;
   }
 
   ngOnInit(): void {
     this.socialAuthService.authState.subscribe((user) => {
       this.user = user;
+      console.log(user);
       if (user != null) {
         this.http.post('http://127.0.0.1:8000/auth/google/', {
           access_token: this.user.authToken
         }).subscribe((response: any) => {
-          this.cookieService.set('auth-token', response.key);
+          this.authService.accessToken = response.key;
           if (Swal.isVisible()) {
             Swal.fire({
               icon: 'success',
@@ -61,7 +62,6 @@ export class AppComponent implements OnInit {
     this.http.post('http://127.0.0.1:8000/auth/logout/', {}).subscribe(
       (response) => {
         console.log(response);
-        this.cookieService.delete('auth-token');
         this.socialAuthService.signOut()
           .then(() => {
             Swal.fire({
