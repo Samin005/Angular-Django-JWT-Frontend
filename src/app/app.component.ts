@@ -3,6 +3,7 @@ import {GoogleLoginProvider, SocialAuthService} from 'angularx-social-login';
 import {HttpClient} from '@angular/common/http';
 import Swal from 'sweetalert2';
 import {AuthService} from './auth.service';
+import {interval, Subscription} from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -13,11 +14,15 @@ export class AppComponent implements OnInit {
 
   user: any;
   secretData = {name: '', value: ''};
+  refreshTokenSubscription: Subscription;
+  refreshTokenInterval: number;
 
   constructor(private http: HttpClient,
               private socialAuthService: SocialAuthService,
               private authService: AuthService) {
     this.user = null;
+    this.refreshTokenSubscription = new Subscription();
+    this.refreshTokenInterval = 300000;
   }
 
   ngOnInit(): void {
@@ -28,7 +33,11 @@ export class AppComponent implements OnInit {
         this.http.post('http://127.0.0.1:8000/auth/google/', {
           access_token: this.user.authToken
         }).subscribe((response: any) => {
-          this.authService.accessToken = response.key;
+          this.authService.accessToken = response.access_token;
+          this.authService.refreshToken = response.refresh_token;
+          this.tokenRefresh();
+          this.refreshTokenSubscription = interval(this.refreshTokenInterval).subscribe(() => this.tokenRefresh());
+          console.log(response);
           if (Swal.isVisible()) {
             Swal.fire({
               icon: 'success',
@@ -62,6 +71,8 @@ export class AppComponent implements OnInit {
     this.http.post('http://127.0.0.1:8000/auth/logout/', {}).subscribe(
       (response) => {
         console.log(response);
+        this.authService.resetTokens();
+        this.refreshTokenSubscription.unsubscribe();
         this.socialAuthService.signOut()
           .then(() => {
             Swal.fire({
@@ -107,5 +118,18 @@ export class AppComponent implements OnInit {
         }).finally();
       }
     );
+  }
+
+  tokenRefresh(): void{
+    this.http.post('http://127.0.0.1:8000/auth/token/refresh/', {refresh: this.authService.refreshToken}).subscribe(
+      (response: any) => {
+        console.log(response);
+        this.authService.accessToken = response.access;
+        const accessTokenExpirationTime = new Date(response.access_token_expiration);
+        const now = new Date();
+        this.refreshTokenInterval = accessTokenExpirationTime.getTime() - now.getTime();
+        this.refreshTokenInterval = this.refreshTokenInterval - this.refreshTokenInterval * .1;
+        console.log('refresh interval: ' + this.refreshTokenInterval / 60000 + ' mins');
+      });
   }
 }

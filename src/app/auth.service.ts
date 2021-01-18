@@ -12,4 +12,9 @@ export class AuthService {
     this.accessToken = null;
     this.refreshToken = null;
   }
+
+  resetTokens(): void {
+    this.accessToken = null;
+    this.refreshToken = null;
+  }
 }
