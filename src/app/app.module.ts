@@ -4,7 +4,9 @@ import {NgModule} from '@angular/core';
 import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
 import {SocialLoginModule, SocialAuthServiceConfig, GoogleLoginProvider} from 'angularx-social-login';
-import {HttpClientModule} from '@angular/common/http';
+import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
+import {CookieService} from 'ngx-cookie-service';
+import {AuthInterceptor} from './auth.interceptor';
 
 @NgModule({
   declarations: [
@@ -16,10 +18,11 @@ import {HttpClientModule} from '@angular/common/http';
     HttpClientModule,
     SocialLoginModule
   ],
-  providers: [{
-    provide: 'SocialAuthServiceConfig',
+  providers: [
+    {provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true},
+    {provide: 'SocialAuthServiceConfig',
     useValue: {
-      autoLogin: false,
+      autoLogin: true,
       providers: [
         {
           id: GoogleLoginProvider.PROVIDER_ID,
@@ -28,8 +31,9 @@ import {HttpClientModule} from '@angular/common/http';
           )
         }
       ]
-    } as SocialAuthServiceConfig
-  }],
+    } as SocialAuthServiceConfig},
+    CookieService
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule {

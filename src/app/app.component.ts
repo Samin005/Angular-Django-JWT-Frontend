@@ -1,7 +1,8 @@
 import {Component, OnInit} from '@angular/core';
-import {GoogleLoginProvider, SocialAuthService, SocialUser} from 'angularx-social-login';
-import {HttpClient, HttpHeaders} from '@angular/common/http';
+import {GoogleLoginProvider, SocialAuthService} from 'angularx-social-login';
+import {HttpClient} from '@angular/common/http';
 import Swal from 'sweetalert2';
+import {CookieService} from 'ngx-cookie-service';
 
 @Component({
   selector: 'app-root',
@@ -10,57 +11,90 @@ import Swal from 'sweetalert2';
 })
 export class AppComponent implements OnInit {
 
-  user: SocialUser;
-  loggedIn: boolean;
-  authHeader: HttpHeaders;
+  user: any;
   secretData = {name: '', value: ''};
 
   constructor(private http: HttpClient,
-              private socialAuthService: SocialAuthService) {
-    this.user = new SocialUser();
-    this.loggedIn = false;
-    this.authHeader = new HttpHeaders();
+              private socialAuthService: SocialAuthService,
+              private cookieService: CookieService) {
+    this.user = null;
   }
 
   ngOnInit(): void {
     this.socialAuthService.authState.subscribe((user) => {
       this.user = user;
-      console.log(this.user);
-      this.loggedIn = (user != null);
-      if (this.loggedIn) {
+      if (user != null) {
         this.http.post('http://127.0.0.1:8000/auth/google/', {
           access_token: this.user.authToken
         }).subscribe((response: any) => {
-          console.log(response);
-          this.authHeader = new HttpHeaders({
-            'Content-Type': 'application/json',
-            Authorization: 'Token ' + response.key
-          });
+          this.cookieService.set('auth-token', response.key);
+          if (Swal.isVisible()) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Sign-in Success!',
+              text: 'Welcome, ' + this.user.name,
+              showConfirmButton: false,
+              timer: 1000
+            }).finally();
+          }
         }, (error) => console.log(error));
       }
     });
   }
 
   signInWithGoogle(): void {
-    this.socialAuthService.signIn(GoogleLoginProvider.PROVIDER_ID).catch(error => console.log(error));
+    Swal.fire({title: 'Signing-in with Google...'}).finally();
+    Swal.showLoading();
+    this.socialAuthService.signIn(GoogleLoginProvider.PROVIDER_ID).catch(error => {
+      console.log(error);
+      Swal.fire({
+        icon: 'error',
+        title: error.error,
+        timer: 2000
+      }).finally();
+    });
   }
 
   signOut(): void {
-    this.http.post('http://127.0.0.1:8000/auth/logout/', {}, {headers: this.authHeader}).subscribe(
+    Swal.fire({title: 'Signing-out...'}).finally();
+    Swal.showLoading();
+    this.http.post('http://127.0.0.1:8000/auth/logout/', {}).subscribe(
       (response) => {
         console.log(response);
-        this.authHeader = new HttpHeaders();
-        this.socialAuthService.signOut().catch(error => console.log(error));
-      }, (error) => console.log(error));
+        this.cookieService.delete('auth-token');
+        this.socialAuthService.signOut()
+          .then(() => {
+            Swal.fire({
+              icon: 'success',
+              title: 'Sign-out Success!',
+              showConfirmButton: false,
+              timer: 1000
+            }).finally();
+          })
+          .catch(error => {
+            console.log(error);
+            Swal.fire({
+              icon: 'error',
+              title: error.error
+            }).finally();
+          });
+      }, (error) => {
+        console.log(error);
+        Swal.fire({
+          icon: 'error',
+          title: error.message
+        }).finally();
+      });
   }
 
   requestSecretData(): void {
-    this.http.get('http://127.0.0.1:8000/secret/', {headers: this.authHeader}).subscribe(
+    Swal.showLoading();
+    this.http.get('http://127.0.0.1:8000/secret/').subscribe(
       (response: any) => {
         console.log(response);
         this.secretData = response;
         Swal.fire({
-          icon: 'success',
+          icon: 'info',
           title: this.secretData.name + ':',
           text: this.secretData.value
         }).finally();
